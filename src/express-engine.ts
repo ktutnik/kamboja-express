@@ -6,14 +6,14 @@ import * as BodyParser from "body-parser"
 import * as Http from "http";
 import * as Lodash from "lodash"
 import * as Fs from "fs"
-import {RequestAdapter} from "./request-adapter"
-import {ResponseAdapter} from "./response-adapter"
+import { RequestAdapter } from "./request-adapter"
+import { ResponseAdapter } from "./response-adapter"
 import * as Chalk from "chalk"
 
 export class ExpressEngine implements Kamboja.Engine {
-    app:Express.Application;
-    options:Kamboja.KambojaOption;
-    constructor(options:Kamboja.KambojaOption, app?:Express.Application) {
+    app: Express.Application;
+    options: Kamboja.KambojaOption;
+    constructor(options: Kamboja.KambojaOption, app?: Express.Application) {
         this.options = Lodash.assign(<Kamboja.KambojaOption>{
             skipAnalysis: false,
             showConsoleLog: true,
@@ -26,12 +26,12 @@ export class ExpressEngine implements Kamboja.Engine {
         }, options)
     }
 
-    private initExpress(options:Kamboja.KambojaOption) {
+    private initExpress(options: Kamboja.KambojaOption) {
         let pathResolver = new Kamboja.PathResolver();
         let app = Express();
         app.set("views", pathResolver.resolve(options.viewPath))
         app.set("view engine", options.viewEngine)
-        if(options.showConsoleLog) app.use(Logger("dev"))
+        if (options.showConsoleLog) app.use(Logger("dev"))
         app.use(BodyParser.json())
         app.use(BodyParser.urlencoded({ extended: false }));
         app.use(CookieParser());
@@ -61,7 +61,6 @@ export class ExpressEngine implements Kamboja.Engine {
 
     private initController(routes: Kamboja.RouteInfo[]) {
         for (let route of routes) {
-            if(route.analysis && route.analysis.length > 0) continue
             let method = route.httpMethod.toLowerCase();
             this.app[method](route.route, async (req, resp, next) => {
                 let handler = new Kamboja.RequestHandler(route, this.options.dependencyResolver,
@@ -71,35 +70,38 @@ export class ExpressEngine implements Kamboja.Engine {
         }
     }
 
-    private generateRoutes(){
+    private generateRoutes() {
         let generator = new Kamboja.RouteGenerator(this.options.controllerPaths,
             this.options.identifierResolver, Fs.readFileSync)
         let routes = generator.getRoutes();
-        
+
         let analyzer = new Kamboja.RouteAnalyzer(routes)
         let analysis = analyzer.analyse();
-        for(let item of analysis){
+        for (let item of analysis) {
             console.log()
-            if(item.type == "Warning")
+            if (item.type == "Warning")
                 console.log(Chalk.yellow(`[Kamboja] ${item.message}`))
-            else 
+            else
                 console.log(Chalk.red(`[Kamboja] ${item.message}`))
         }
-        console.log();
-        if(analysis.some(x => x.type == "Error")){
+        if (analysis.some(x => x.type == "Error")) {
+            console.log();
             console.log(Chalk.red("[Kamboja] Fatal Error: Shuting down..."))
-            process.exit(5);
+            throw new Error("Fatal error")
         }
-        
+
         let result = routes.filter(x => x.analysis == null || x.analysis.length == 0)
-        console.log()
-        console.log("Routes")
-        console.log("----------------------------------------")
-        for(let route of result){
-            console.log(`${route.httpMethod}\t${route.route}`)
+        if (this.options.showConsoleLog) {
+            console.log()
+            console.log("Routes")
+            console.log("----------------------------------------")
+            for (let route of result) {
+                console.log(`${route.httpMethod}\t${route.route}`)
+            }
+            console.log("----------------------------------------")
+            console.log()
         }
-        console.log("----------------------------------------")
-        console.log()
+
         return result;
     }
 
