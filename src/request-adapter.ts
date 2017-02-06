@@ -24,7 +24,23 @@ export class RequestAdapter implements Kamboja.HttpRequest {
         this.referrer = request.header("referrer");
     }
 
-    getHeader(key: string): string { return this.headers[key.toLowerCase()]; }
-    getCookie(key: string): string { return this.cookies[key.toLowerCase()]; }
-    getParam(key: string): string { return this.params[key.toLowerCase()]; }
+    private findCaseInsensitive(obj, key){
+        let keys = Object.keys(obj);
+        for(let item of keys){
+            if(item.toLowerCase() == key.toLowerCase())
+                return obj[item]
+        }
+    }
+
+    getHeader(key: string): string { 
+        return this.findCaseInsensitive(this.headers, key) 
+    }
+
+    getCookie(key: string): string { 
+        return this.findCaseInsensitive(this.cookies, key) 
+    }
+    
+    getParam(key: string): string { 
+        return this.findCaseInsensitive(this.params, key) 
+    }
 }

@@ -36,8 +36,8 @@ export class ResponseAdapter implements Kamboja.HttpResponse {
      }
 
      status(status:number, message?:string){
-         let resp = this.response.status(status)
-         if(message) resp.send(message)
+         this.response.status(status)
+         if(message) this.response.send(message)
      }
 
      end(){
