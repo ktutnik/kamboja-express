@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "lib": ["dom", "es2015.promise", "es5"],
+        "module": "commonjs",
+        "target": "es5",
+        "noImplicitAny": false,
+        "sourceMap": false,
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "importHelpers": true
+    },
+    "exclude": [
+        "node_modules"
+    ]
+}
