@@ -1,3 +1,5 @@
+import { RequestAdapter } from "./request-adapter"
+import { ResponseAdapter } from "./response-adapter"
 import * as Kamboja from "kamboja"
 import * as Express from "express"
 import * as Logger from "morgan"
@@ -6,8 +8,6 @@ import * as BodyParser from "body-parser"
 import * as Http from "http";
 import * as Lodash from "lodash"
 import * as Fs from "fs"
-import { RequestAdapter } from "./request-adapter"
-import { ResponseAdapter } from "./response-adapter"
 import * as Chalk from "chalk"
 
 export class ExpressEngine implements Kamboja.Engine {
@@ -44,7 +44,7 @@ export class ExpressEngine implements Kamboja.Engine {
     private initErrorHandler() {
         let env = this.app.get('env')
         this.app.use((err, req, res, next) => {
-            let status = err.status || 500;
+            let status = err.status;
             if (this.options.errorHandler) {
                 this.options.errorHandler(new Kamboja.HttpError(status, err,
                     new RequestAdapter(req), new ResponseAdapter(res, next)))
