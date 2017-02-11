@@ -1,6 +1,6 @@
 import { RequestAdapter } from "./request-adapter"
 import { ResponseAdapter } from "./response-adapter"
-import * as Kamboja from "kamboja"
+import {Kamboja, KambojaOption, Engine, RequestHandler, Facade, PathResolver, HttpError, RouteInfo} from "kamboja"
 import * as Express from "express"
 import * as Logger from "morgan"
 import * as CookieParser from "cookie-parser"
@@ -10,24 +10,11 @@ import * as Lodash from "lodash"
 import * as Fs from "fs"
 import * as Chalk from "chalk"
 
-export class ExpressEngine implements Kamboja.Engine {
-    app: Express.Application;
-    options: Kamboja.KambojaOption;
-    constructor(options: Kamboja.KambojaOption, app?: Express.Application) {
-        this.options = Lodash.assign(<Kamboja.KambojaOption>{
-            skipAnalysis: false,
-            showConsoleLog: true,
-            controllerPaths: ["api", "controller"],
-            viewPath: "view",
-            staticFilePath: "public",
-            viewEngine: "hbs",
-            dependencyResolver: new Kamboja.DefaultDependencyResolver(),
-            identifierResolver: new Kamboja.DefaultIdentifierResolver(),
-        }, options)
-    }
+export class ExpressEngine implements Engine {
+    private app: Express.Application;
 
-    private initExpress(options: Kamboja.KambojaOption) {
-        let pathResolver = new Kamboja.PathResolver();
+    private initExpress(options: KambojaOption) {
+        let pathResolver = new PathResolver();
         let app = Express();
         app.set("views", pathResolver.resolve(options.viewPath))
         app.set("view engine", options.viewEngine)
@@ -41,12 +28,12 @@ export class ExpressEngine implements Kamboja.Engine {
         this.app = app;
     }
 
-    private initErrorHandler() {
+    private initErrorHandler(options:KambojaOption) {
         let env = this.app.get('env')
         this.app.use((err, req, res, next) => {
             let status = err.status;
-            if (this.options.errorHandler) {
-                this.options.errorHandler(new Kamboja.HttpError(status, err,
+            if (options.errorHandler) {
+                options.errorHandler(new HttpError(status, err,
                     new RequestAdapter(req), new ResponseAdapter(res, next)))
             }
             else {
@@ -59,57 +46,21 @@ export class ExpressEngine implements Kamboja.Engine {
         })
     }
 
-    private initController(routes: Kamboja.RouteInfo[]) {
+    private initController(routes: RouteInfo[]) {
         for (let route of routes) {
             let method = route.httpMethod.toLowerCase();
             this.app[method](route.route, async (req, resp, next) => {
-                let handler = new Kamboja.RequestHandler(route, this.options.dependencyResolver,
+                let handler = new RequestHandler(Kamboja.getFacade(), route,
                     new RequestAdapter(req), new ResponseAdapter(resp, next))
                 await handler.execute();
             })
         }
     }
 
-    private generateRoutes() {
-        let generator = new Kamboja.RouteGenerator(this.options.controllerPaths,
-            this.options.identifierResolver, Fs.readFileSync)
-        let routes = generator.getRoutes();
-
-        let analyzer = new Kamboja.RouteAnalyzer(routes)
-        let analysis = analyzer.analyse();
-        for (let item of analysis) {
-            console.log()
-            if (item.type == "Warning")
-                console.log(Chalk.yellow(`[Kamboja] ${item.message}`))
-            else
-                console.log(Chalk.red(`[Kamboja] ${item.message}`))
-        }
-        if (analysis.some(x => x.type == "Error")) {
-            console.log();
-            console.log(Chalk.red("[Kamboja] Fatal Error: Shuting down..."))
-            throw new Error("Fatal error")
-        }
-
-        let result = routes.filter(x => x.analysis == null || x.analysis.length == 0)
-        if (this.options.showConsoleLog) {
-            console.log()
-            console.log("Routes")
-            console.log("----------------------------------------")
-            for (let route of result) {
-                console.log(`${route.httpMethod}\t${route.route}`)
-            }
-            console.log("----------------------------------------")
-            console.log()
-        }
-
-        return result;
-    }
-
-    init() {
-        this.initExpress(this.options)
-        let routes = this.generateRoutes()
+    init(routes:RouteInfo[], options: KambojaOption) {
+        this.initExpress(options)
         this.initController(routes)
-        this.initErrorHandler()
+        this.initErrorHandler(options)
         return this.app;
     }
 
