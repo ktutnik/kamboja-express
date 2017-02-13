@@ -1,6 +1,6 @@
 import { RequestAdapter } from "./request-adapter"
 import { ResponseAdapter } from "./response-adapter"
-import {Kamboja, KambojaOption, Engine, RequestHandler, Facade, PathResolver, HttpError, RouteInfo} from "kamboja"
+import { Kamboja, KambojaOption, Engine, RequestHandler, Facade, PathResolver, HttpError, RouteInfo } from "kamboja"
 import * as Express from "express"
 import * as Logger from "morgan"
 import * as CookieParser from "cookie-parser"
@@ -11,7 +11,8 @@ import * as Fs from "fs"
 import * as Chalk from "chalk"
 
 export class ExpressEngine implements Engine {
-    private app: Express.Application;
+
+    constructor(private app?: Express.Application) { }
 
     private initExpress(options: KambojaOption) {
         let pathResolver = new PathResolver();
@@ -28,7 +29,7 @@ export class ExpressEngine implements Engine {
         this.app = app;
     }
 
-    private initErrorHandler(options:KambojaOption) {
+    private initErrorHandler(options: KambojaOption) {
         let env = this.app.get('env')
         this.app.use((err, req, res, next) => {
             let status = err.status;
@@ -57,10 +58,10 @@ export class ExpressEngine implements Engine {
         }
     }
 
-    init(routes:RouteInfo[], options: KambojaOption) {
-        this.initExpress(options)
+    init(routes: RouteInfo[], options: KambojaOption) {
+        if (!this.app) this.initExpress(options)
         this.initController(routes)
-        this.initErrorHandler(options)
+        if (!this.app) this.initErrorHandler(options)
         return this.app;
     }
 
