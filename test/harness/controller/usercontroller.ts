@@ -5,4 +5,8 @@ export class UserController extends Controller {
     index(){
         return this.view()
     }
+
+    hasError(){
+        throw new Error("This user error")
+    }
 }
