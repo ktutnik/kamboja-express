@@ -24,8 +24,6 @@ export class ExpressEngine implements Engine {
         app.use(BodyParser.urlencoded({ extended: false }));
         app.use(CookieParser());
         app.use(Express.static(pathResolver.resolve(options.staticFilePath)))
-        if (options.overrideAppEngine)
-            options.overrideAppEngine(app)
         this.app = app;
     }
 
@@ -47,11 +45,11 @@ export class ExpressEngine implements Engine {
         })
     }
 
-    private initController(routes: RouteInfo[]) {
+    private initController(routes: RouteInfo[], option:KambojaOption) {
         for (let route of routes) {
             let method = route.httpMethod.toLowerCase();
             this.app[method](route.route, async (req, resp, next) => {
-                let handler = new RequestHandler(Kamboja.getFacade(), route,
+                let handler = new RequestHandler(option.getStorage(), option.dependencyResolver, option.validators, route,
                     new RequestAdapter(req), new ResponseAdapter(resp, next))
                 await handler.execute();
             })
@@ -60,8 +58,8 @@ export class ExpressEngine implements Engine {
 
     init(routes: RouteInfo[], options: KambojaOption) {
         if (!this.app) this.initExpress(options)
-        this.initController(routes)
-        if (!this.app) this.initErrorHandler(options)
+        this.initController(routes, options)
+        this.initErrorHandler(options)
         return this.app;
     }
 
