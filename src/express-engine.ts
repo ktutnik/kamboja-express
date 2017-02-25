@@ -1,6 +1,8 @@
 import { RequestAdapter } from "./request-adapter"
 import { ResponseAdapter } from "./response-adapter"
-import { Kamboja, KambojaOption, Engine, RequestHandler, Facade, PathResolver, HttpError, RouteInfo } from "kamboja"
+import { ExpressEngineOption } from "./express-engine-options"
+import { ExpressMetaData } from "./middleware-decorator"
+import { Kamboja, KambojaOption, Engine, RequestHandler, Facade, PathResolver, HttpError, RouteInfo, DependencyResolver } from "kamboja"
 import * as Express from "express"
 import * as Logger from "morgan"
 import * as CookieParser from "cookie-parser"
@@ -45,24 +47,53 @@ export class ExpressEngine implements Engine {
         })
     }
 
-    private initController(routes: RouteInfo[], option:KambojaOption) {
-        for (let route of routes) {
-            let method = route.httpMethod.toLowerCase();
-            this.app[method](route.route, async (req, resp, next) => {
-                let handler = new RequestHandler(option.getStorage(), option.dependencyResolver, option.validators, route,
-                    new RequestAdapter(req), new ResponseAdapter(resp, next))
-                await handler.execute();
+    private initController(routes: RouteInfo[], option: ExpressEngineOption) {
+        if (option.middlewares && option.middlewares.length > 0)
+            this.app.use(option.middlewares)
+        let routeByClass = Lodash.groupBy(routes, "classMetaData.name")
+
+        Lodash.forOwn(routeByClass, (routes, key) => {
+            let classRoute = Express.Router()
+            let controller = this.getController(routes[0], option.dependencyResolver)
+            routes.forEach(route => {
+                let requestHandler = async (req, resp, next) => {
+                    let handler = new RequestHandler(option, route, new RequestAdapter(req), new ResponseAdapter(resp, next))
+                    await handler.execute();
+                }
+                let methodRoute = Express.Router()
+                let method = route.httpMethod.toLowerCase();
+                let methodMiddlewares = ExpressMetaData.getMiddlewares(controller, route.methodMetaData.name)
+                if (methodMiddlewares && methodMiddlewares.length > 0)
+                    methodRoute[method](route.methodPath, methodMiddlewares, requestHandler)
+                else
+                    methodRoute[method](route.methodPath, requestHandler)
+                let classMiddlewares = ExpressMetaData.getMiddlewares(controller)
+                if (classMiddlewares && classMiddlewares.length > 0)
+                    classRoute.use(routes[0].classPath, classMiddlewares, methodRoute)
+                else
+                    classRoute.use(routes[0].classPath, methodRoute)
             })
+            this.app.use(classRoute)
+        })
+    }
+
+
+
+    private getController(routeInfo: RouteInfo, resolver: DependencyResolver) {
+        try {
+            return resolver.resolve(routeInfo.classId)
+        }
+        catch (e) {
+            throw new Error(`Can not instantiate [${routeInfo.classId}] as Controller`)
         }
     }
 
-    init(routes: RouteInfo[], options: KambojaOption) {
+    init(routes: RouteInfo[], options: ExpressEngineOption) {
         if (!this.app) this.initExpress(options)
         this.initController(routes, options)
         this.initErrorHandler(options)
         return this.app;
     }
-
 }
 
 
