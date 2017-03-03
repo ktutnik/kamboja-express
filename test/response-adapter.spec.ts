@@ -15,7 +15,9 @@ let HttpResponse: any = {
     status: function () { },
     end: function () { },
     error: function () { },
-    cookie:function(){}
+    cookie: function () { },
+    clearCookie: function () { },
+    contentType: function () { }
 };
 
 describe("RequestAdapter", () => {
@@ -24,6 +26,7 @@ describe("RequestAdapter", () => {
         let test = new ResponseAdapter(<any>HttpResponse, () => { })
         test.view("the-view");
         Chai.expect(spy.getCall(0).args[0]).eq("the-view")
+        spy.restore()
     })
 
     it("Should call json properly", async () => {
@@ -33,6 +36,7 @@ describe("RequestAdapter", () => {
         test.json("the-json", 404)
         Chai.expect(spy.getCall(0).args[0]).eq("the-json")
         Chai.expect(spy.getCall(1).args).deep.eq([404, "the-json"])
+        spy.restore()
     })
 
     it("Should call jsonp properly", async () => {
@@ -42,6 +46,7 @@ describe("RequestAdapter", () => {
         test.jsonp("the-json", 404)
         Chai.expect(spy.getCall(0).args[0]).eq("the-json")
         Chai.expect(spy.getCall(1).args).deep.eq([404, "the-json"])
+        spy.restore()
     })
 
     it("Should call file properly", async () => {
@@ -49,6 +54,7 @@ describe("RequestAdapter", () => {
         let test = new ResponseAdapter(<any>HttpResponse, () => { })
         test.file("the/path");
         Chai.expect(spy.getCall(0).args[0]).eq("the/path")
+        spy.restore()
     })
 
     it("Should call redirect properly", async () => {
@@ -56,6 +62,7 @@ describe("RequestAdapter", () => {
         let test = new ResponseAdapter(<any>HttpResponse, () => { })
         test.redirect("the/path");
         Chai.expect(spy.getCall(0).args[0]).eq("the/path")
+        spy.restore()
     })
 
     it("Should call status properly", async () => {
@@ -65,6 +72,8 @@ describe("RequestAdapter", () => {
         test.status(404, "hellow");
         test.status(500)
         Chai.expect(spy.getCall(0).args[0]).eq(404)
+        spy.restore()
+        sendSpy.restore()
     })
 
     it("Should call end properly", async () => {
@@ -72,6 +81,7 @@ describe("RequestAdapter", () => {
         let test = new ResponseAdapter(<any>HttpResponse, () => { })
         test.end();
         Chai.expect(spy.called).true
+        spy.restore()
     })
 
     it("Should call error properly", async () => {
@@ -87,5 +97,30 @@ describe("RequestAdapter", () => {
         let test = new ResponseAdapter(<any>HttpResponse, () => { })
         test.setCookie("Key", "Value");
         Chai.expect(spy.getCall(0).args).deep.eq(["Key", "Value", undefined])
+        spy.restore()
+    })
+
+    it("Should call clearCookie properly", async () => {
+        let spy = Sinon.spy(HttpResponse, "clearCookie")
+        let test = new ResponseAdapter(<any>HttpResponse, () => { })
+        test.removeCookie("Key", { path: "/user" });
+        Chai.expect(spy.getCall(0).args).deep.eq(["Key", { path: "/user" }])
+        spy.restore()
+    })
+
+    it("Should call contentType properly", async () => {
+        let spy = Sinon.spy(HttpResponse, "contentType")
+        let test = new ResponseAdapter(<any>HttpResponse, () => { })
+        test.setContentType("text/xml");
+        Chai.expect(spy.getCall(0).args).deep.eq(["text/xml"])
+        spy.restore()
+    })
+
+    it("Should call send properly", async () => {
+        let spy = Sinon.spy(HttpResponse, "send")
+        let test = new ResponseAdapter(<any>HttpResponse, () => { })
+        test.send("Hello!");
+        Chai.expect(spy.getCall(0).args).deep.eq(["Hello!"])
+        spy.restore()
     })
 })

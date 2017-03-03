@@ -48,4 +48,16 @@ export class ResponseAdapter implements Kamboja.HttpResponse {
         error.status = status || 500
         this.next(error)
      }
+
+     setContentType(type:string){
+         this.response.contentType(type)
+     }
+
+     send(body){
+         this.response.send(body)
+     }
+
+     removeCookie(key:string, options?:Kamboja.CookieOptions){
+         this.response.clearCookie(key, options)
+     }
 }
