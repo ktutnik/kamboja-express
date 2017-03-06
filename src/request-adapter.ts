@@ -13,7 +13,7 @@ export class RequestAdapter implements Kamboja.HttpRequest {
     referrer: string
     url: string
 
-    constructor(request: Express.Request) { 
+    constructor(private request: Express.Request) { 
         this.headers = request.headers
         this.cookies = request.cookies
         this.params = request.params
@@ -22,6 +22,7 @@ export class RequestAdapter implements Kamboja.HttpRequest {
         this.httpMethod = <Kamboja.HttpMethod>request.method;
         this.url = request.originalUrl;
         this.referrer = request.header("referrer");
+        
     }
 
     private findCaseInsensitive(obj, key){
@@ -42,5 +43,9 @@ export class RequestAdapter implements Kamboja.HttpRequest {
     
     getParam(key: string): string { 
         return this.findCaseInsensitive(this.params, key) 
+    }
+
+    isAccept(key:string):boolean{
+        return typeof this.request.accepts(key) != "undefined"
     }
 }
