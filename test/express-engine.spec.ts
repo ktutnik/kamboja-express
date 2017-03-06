@@ -173,13 +173,4 @@ describe("ExpressEngine", () => {
                 .expect(200, resolve)
         })
     })
-
-    it("Should throw when provided unqualified controller name", () => {
-        let engine:any = new ExpressEngine()
-        Chai.expect(() => {
-            engine.getController({classId: "NonQualified, incorrect/path"}, 
-                new Kamboja.DefaultDependencyResolver(new Kamboja.DefaultIdentifierResolver()))
-        }).throw("Can not instantiate [NonQualified, incorrect/path] as Controller")
-    })
-
 })
