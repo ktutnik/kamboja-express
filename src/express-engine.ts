@@ -2,7 +2,7 @@ import { RequestAdapter } from "./request-adapter"
 import { ResponseAdapter } from "./response-adapter"
 import { ExpressEngineOption } from "./express-engine-options"
 import { ExpressMetaData } from "./express-metadata"
-import { Kamboja, Container, KambojaOption, Engine, RequestHandler, Facade, PathResolver, HttpError, RouteInfo, DependencyResolver } from "kamboja"
+import { Kamboja, Factory, KambojaOption, Engine, RequestHandler, Facade, PathResolver, HttpError, RouteInfo, DependencyResolver } from "kamboja"
 import * as Express from "express"
 import * as Logger from "morgan"
 import * as CookieParser from "cookie-parser"
@@ -55,19 +55,20 @@ export class ExpressEngine implements Engine {
         Lodash.forOwn(routeByClass, (routes, key) => {
             let classRoute = Express.Router()
             routes.forEach(route => {
-                let container = new Container(option, route)
+                let container = new Factory(option, route)
                 let requestHandler = async (req, resp, next) => {
                     let handler = new RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next))
                     await handler.execute();
                 }
                 let methodRoute = Express.Router()
                 let method = route.httpMethod.toLowerCase();
-                let methodMiddlewares = ExpressMetaData.getMiddlewares(container.controller, route.methodMetaData.name)
+                let controller = container.createController();
+                let methodMiddlewares = ExpressMetaData.getMiddlewares(controller, route.methodMetaData.name)
                 if (methodMiddlewares && methodMiddlewares.length > 0)
                     methodRoute[method](route.methodPath, methodMiddlewares, requestHandler)
                 else
                     methodRoute[method](route.methodPath, requestHandler)
-                let classMiddlewares = ExpressMetaData.getMiddlewares(container.controller)
+                let classMiddlewares = ExpressMetaData.getMiddlewares(controller)
                 if (classMiddlewares && classMiddlewares.length > 0)
                     classRoute.use(routes[0].classPath, classMiddlewares, methodRoute)
                 else
