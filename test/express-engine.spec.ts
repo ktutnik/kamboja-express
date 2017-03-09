@@ -56,7 +56,7 @@ describe("ExpressEngine", () => {
         let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
             controllerPaths: ["test/harness/controller"],
             viewPath: "test/harness/view",
-            errorHandler: (error: Kamboja.HttpError) => {
+            errorHandler: (error: Kamboja.Core.HttpError) => {
                 Chai.expect(error.error.message).contain("user error")
                 error.response.error(error.error)
             }
@@ -81,7 +81,7 @@ describe("ExpressEngine", () => {
 
     it("Should able use existing express app", () => {
         let express = Express();
-        let pathResolver = new Kamboja.PathResolver()
+        let pathResolver = new Kamboja.Resolver.PathResolver()
         express.set("views", pathResolver.resolve("test/harness/view"))
         express.set("view engine", "hbs")
         express.use(Logger("dev"))
@@ -91,7 +91,7 @@ describe("ExpressEngine", () => {
         let kamboja = new Kamboja.Kamboja(new ExpressEngine(express), {
             controllerPaths: ["test/harness/controller"],
             viewPath: "test/harness/view",
-            errorHandler: (error: Kamboja.HttpError) => {
+            errorHandler: (error: Kamboja.Core.HttpError) => {
                 Chai.expect(error.error.message).contain("user error")
                 error.response.error(error.error)
             }
