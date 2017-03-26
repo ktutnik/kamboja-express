@@ -26,6 +26,22 @@ describe("ExpressEngine", () => {
             .expect(200)
     })
 
+    it("Should redirect to default page properly", () => {
+        let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
+            controllerPaths: ["test/harness/controller"],
+            viewPath: "test/harness/view",
+            defaultPage: "/user/index"
+        })
+        let app = kamboja.init()
+        return Supertest(app)
+            .get("/")
+            .expect((result) => {
+                Chai.expect(result.text).contain("user/index")
+            })
+            .expect(302)
+    })
+
+
     it("Should able to hide express logger", () => {
         let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
             controllerPaths: ["test/harness/controller"],
@@ -107,7 +123,7 @@ describe("ExpressEngine", () => {
             controllerPaths: ["test/harness/controller"],
             viewPath: "test/harness/view",
             middlewares: [
-                (req, res:Express.Response, next) => {
+                (req, res: Express.Response, next) => {
                     res.status(501)
                     res.end()
                 }

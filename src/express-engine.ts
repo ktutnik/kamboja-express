@@ -54,6 +54,9 @@ export class ExpressEngine implements Core.Engine {
 
         Lodash.forOwn(routeByClass, (routes, key) => {
             let classRoute = Express.Router()
+            this.app.get("/", (req, resp, next) => {
+                resp.redirect(option.defaultPage)
+            })
             routes.forEach(route => {
                 let container = new Engine.ControllerFactory(option, route)
                 let requestHandler = async (req, resp, next) => {
