@@ -17,7 +17,7 @@ export class ExpressEngine implements Core.Engine {
     constructor(private app?: Express.Application) { }
 
     private initExpress(options: Core.KambojaOption) {
-        let pathResolver = new Resolver.PathResolver();
+        let pathResolver = options.pathResolver
         let app = Express();
         app.set("views", pathResolver.resolve(options.viewPath))
         app.set("view engine", options.viewEngine)
@@ -58,7 +58,7 @@ export class ExpressEngine implements Core.Engine {
                 resp.redirect(option.defaultPage)
             })
             routes.forEach(route => {
-                let container = new Engine.ControllerFactory(option, route)
+                let container = new Engine.ControllerFactory(route)
                 let requestHandler = async (req, resp, next) => {
                     let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next))
                     await handler.execute();
