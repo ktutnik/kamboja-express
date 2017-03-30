@@ -58,7 +58,7 @@ export class ExpressEngine implements Core.Engine {
                 resp.redirect(option.defaultPage)
             })
             routes.forEach(route => {
-                let container = new Engine.ControllerFactory(route)
+                let container = new Engine.ControllerFactory(option, route)
                 let requestHandler = async (req, resp, next) => {
                     let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next))
                     await handler.execute();
