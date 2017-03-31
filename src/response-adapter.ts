@@ -2,7 +2,7 @@ import {Core} from "kamboja"
 import * as Express from "express"
 
 export class ResponseAdapter implements Core.HttpResponse {
-    constructor(private response: Express.Response, private next:Express.NextFunction) { }
+    constructor(public response: Express.Response, public next:Express.NextFunction) { }
 
     setCookie(key:string, value:string, option?:Core.CookieOptions){
         this.response.cookie(key, value, option)

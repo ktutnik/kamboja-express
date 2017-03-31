@@ -13,7 +13,7 @@ export class RequestAdapter implements Core.HttpRequest {
     referrer: string
     url: string
 
-    constructor(private request: Express.Request) {
+    constructor(public request: Express.Request) {
         this.headers = request.headers
         this.cookies = request.cookies
         this.params = request.params
