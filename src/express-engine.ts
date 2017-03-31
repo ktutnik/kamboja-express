@@ -2,7 +2,7 @@ import { RequestAdapter } from "./request-adapter"
 import { ResponseAdapter } from "./response-adapter"
 import { ExpressEngineOption } from "./express-engine-options"
 import { ExpressMetaData } from "./express-metadata"
-import { Kamboja, Container, KambojaOption, Engine, RequestHandler, Facade, PathResolver, HttpError, RouteInfo, DependencyResolver } from "kamboja"
+import { Kamboja, Core, Resolver, Engine } from "kamboja"
 import * as Express from "express"
 import * as Logger from "morgan"
 import * as CookieParser from "cookie-parser"
@@ -12,12 +12,12 @@ import * as Lodash from "lodash"
 import * as Fs from "fs"
 import * as Chalk from "chalk"
 
-export class ExpressEngine implements Engine {
+export class ExpressEngine implements Core.Engine {
 
     constructor(private app?: Express.Application) { }
 
-    private initExpress(options: KambojaOption) {
-        let pathResolver = new PathResolver();
+    private initExpress(options: Core.KambojaOption) {
+        let pathResolver = options.pathResolver
         let app = Express();
         app.set("views", pathResolver.resolve(options.viewPath))
         app.set("view engine", options.viewEngine)
@@ -29,12 +29,12 @@ export class ExpressEngine implements Engine {
         this.app = app;
     }
 
-    private initErrorHandler(options: KambojaOption) {
+    private initErrorHandler(options: Core.KambojaOption) {
         let env = this.app.get('env')
         this.app.use((err, req, res, next) => {
             let status = err.status;
             if (options.errorHandler) {
-                options.errorHandler(new HttpError(status, err,
+                options.errorHandler(new Core.HttpError(status, err,
                     new RequestAdapter(req), new ResponseAdapter(res, next)))
             }
             else {
@@ -47,27 +47,31 @@ export class ExpressEngine implements Engine {
         })
     }
 
-    private initController(routes: RouteInfo[], option: ExpressEngineOption) {
+    private initController(routes: Core.RouteInfo[], option: ExpressEngineOption) {
         if (option.middlewares && option.middlewares.length > 0)
             this.app.use(option.middlewares)
         let routeByClass = Lodash.groupBy(routes, "classMetaData.name")
 
         Lodash.forOwn(routeByClass, (routes, key) => {
             let classRoute = Express.Router()
+            this.app.get("/", (req, resp, next) => {
+                resp.redirect(option.defaultPage)
+            })
             routes.forEach(route => {
-                let container = new Container(option, route)
+                let container = new Engine.ControllerFactory(option, route)
                 let requestHandler = async (req, resp, next) => {
-                    let handler = new RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next))
+                    let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next))
                     await handler.execute();
                 }
                 let methodRoute = Express.Router()
                 let method = route.httpMethod.toLowerCase();
-                let methodMiddlewares = ExpressMetaData.getMiddlewares(container.controller, route.methodMetaData.name)
+                let controller = container.createController();
+                let methodMiddlewares = ExpressMetaData.getMiddlewares(controller, route.methodMetaData.name)
                 if (methodMiddlewares && methodMiddlewares.length > 0)
                     methodRoute[method](route.methodPath, methodMiddlewares, requestHandler)
                 else
                     methodRoute[method](route.methodPath, requestHandler)
-                let classMiddlewares = ExpressMetaData.getMiddlewares(container.controller)
+                let classMiddlewares = ExpressMetaData.getMiddlewares(controller)
                 if (classMiddlewares && classMiddlewares.length > 0)
                     classRoute.use(routes[0].classPath, classMiddlewares, methodRoute)
                 else
@@ -77,7 +81,7 @@ export class ExpressEngine implements Engine {
         })
     }
 
-    init(routes: RouteInfo[], options: ExpressEngineOption) {
+    init(routes: Core.RouteInfo[], options: ExpressEngineOption) {
         if (!this.app) this.initExpress(options)
         this.initController(routes, options)
         this.initErrorHandler(options)

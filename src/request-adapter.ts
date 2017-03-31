@@ -1,11 +1,11 @@
-import * as Kamboja from "kamboja"
+import { Core } from "kamboja"
 import * as Express from "express"
 import * as Lodash from "lodash"
 
 
-export class RequestAdapter implements Kamboja.HttpRequest {
-    httpVersion:string
-    httpMethod:Kamboja.HttpMethod
+export class RequestAdapter implements Core.HttpRequest {
+    httpVersion: string
+    httpMethod: Core.HttpMethod
     headers: { [key: string]: string }
     cookies: { [key: string]: string }
     params: { [key: string]: string }
@@ -13,39 +13,39 @@ export class RequestAdapter implements Kamboja.HttpRequest {
     referrer: string
     url: string
 
-    constructor(private request: Express.Request) { 
+    constructor(private request: Express.Request) {
         this.headers = request.headers
         this.cookies = request.cookies
         this.params = request.params
         this.body = request.body;
         this.httpVersion = request.httpVersion;
-        this.httpMethod = <Kamboja.HttpMethod>request.method;
+        this.httpMethod = <Core.HttpMethod>request.method;
         this.url = request.originalUrl;
         this.referrer = request.header("referrer");
-        
+
     }
 
-    private findCaseInsensitive(obj, key){
+    private findCaseInsensitive(obj, key) {
         let keys = Object.keys(obj);
-        for(let item of keys){
-            if(item.toLowerCase() == key.toLowerCase())
+        for (let item of keys) {
+            if (item.toLowerCase() == key.toLowerCase())
                 return obj[item]
         }
     }
 
-    getHeader(key: string): string { 
-        return this.findCaseInsensitive(this.headers, key) 
+    getHeader(key: string): string {
+        return this.findCaseInsensitive(this.headers, key)
     }
 
-    getCookie(key: string): string { 
-        return this.findCaseInsensitive(this.cookies, key) 
-    }
-    
-    getParam(key: string): string { 
-        return this.findCaseInsensitive(this.params, key) 
+    getCookie(key: string): string {
+        return this.findCaseInsensitive(this.cookies, key)
     }
 
-    isAccept(key:string):boolean{
+    getParam(key: string): string {
+        return this.findCaseInsensitive(this.params, key)
+    }
+
+    isAccept(key: string): boolean {
         return typeof this.request.accepts(key) != "undefined"
     }
 }

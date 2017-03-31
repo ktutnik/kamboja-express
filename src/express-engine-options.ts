@@ -1,6 +1,6 @@
-import * as Kamboja from "kamboja"
+import { Core } from "kamboja"
 import * as Express from "express"
 
-export interface ExpressEngineOption extends Kamboja.KambojaOption{
-    middlewares:(Express.RequestHandler | Express.ErrorRequestHandler)[]
+export interface ExpressEngineOption extends Core.KambojaOption {
+    middlewares: (Express.RequestHandler | Express.ErrorRequestHandler)[]
 }
