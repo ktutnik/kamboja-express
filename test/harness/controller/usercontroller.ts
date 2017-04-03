@@ -19,6 +19,6 @@ export class UserController extends Controller {
     }
 
     executeMiddleware() {
-        return new MiddlewareActionResult(this.request, Middleware)
+        return new MiddlewareActionResult(Middleware)
     }
 }

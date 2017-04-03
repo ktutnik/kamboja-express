@@ -4,12 +4,11 @@ import { ResponseAdapter } from "./response-adapter"
 import { RequestAdapter } from "./request-adapter"
 
 export class MiddlewareActionResult extends Core.ActionResult {
-    constructor(private request:Core.HttpRequest, private middleware: RequestHandler) {
+    constructor(private middleware: RequestHandler) {
         super(null)
     }
 
-    execute(response: ResponseAdapter, routeInfo: Core.RouteInfo) {
-        let request = <RequestAdapter>this.request
+    execute(request:RequestAdapter, response: ResponseAdapter, routeInfo: Core.RouteInfo) {
         this.middleware(request.request, response.response, response.next)
     }
 }
