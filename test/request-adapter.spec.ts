@@ -50,4 +50,47 @@ describe("RequestAdapter", () => {
         })
         Chai.expect(test.isAccept("text/xml")).false
     })
+
+    it("Should return isAuthenticated properly", async () => {
+        let test = new RequestAdapter(<any>{
+            isAuthenticated: function () { return true },
+            header: () => { }
+        })
+        Chai.expect(test.isAuthenticated()).true
+    })
+
+    it("Should return user properly", async () => {
+        let test = new RequestAdapter(<any>{
+            user: {
+                role: "admin",
+                displayName: "Ketut Sandiarsa",
+                id: "8083535"
+            },
+            header: () => { }
+        })
+        Chai.expect(test.user).deep.eq({
+            role: "admin",
+            displayName: "Ketut Sandiarsa",
+            id: "8083535"
+        })
+    })
+
+    it("Should return user role properly", async () => {
+        let test = new RequestAdapter(<any>{
+            user: {
+                role: "admin",
+                displayName: "Ketut Sandiarsa",
+                id: "8083535"
+            },
+            header: () => { }
+        })
+        Chai.expect(test.getUserRole()).eq("admin")
+    })
+
+    it("getUserRole should not error when user is undefined", async () => {
+        let test = new RequestAdapter(<any>{
+            header: () => { }
+        })
+        Chai.expect(test.getUserRole()).undefined
+    })
 })
