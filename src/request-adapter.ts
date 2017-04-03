@@ -3,6 +3,7 @@ import * as Express from "express"
 import * as Lodash from "lodash"
 import * as Passport from "passport"
 import { LoginUser } from "./login-user"
+import * as Url from "url"
 
 
 export class RequestAdapter implements Core.HttpRequest {
@@ -13,7 +14,7 @@ export class RequestAdapter implements Core.HttpRequest {
     params: { [key: string]: string }
     body: any
     referrer: string
-    url: string
+    url: Url.Url
     user: LoginUser
 
     constructor(public request: Express.Request) {
@@ -23,7 +24,8 @@ export class RequestAdapter implements Core.HttpRequest {
         this.body = request.body;
         this.httpVersion = request.httpVersion;
         this.httpMethod = <Core.HttpMethod>request.method;
-        this.url = request.originalUrl;
+        if (request && request.originalUrl)
+            this.url = Url.parse(request.originalUrl);
         this.referrer = request.header("referrer");
         this.user = request.user;
     }

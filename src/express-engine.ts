@@ -57,7 +57,7 @@ export class ExpressEngine implements Core.Engine {
         if (route) {
             this.app.get("/", async (req, resp, next) => {
                 let container = new Engine.ControllerFactory(option, route)
-                let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next))
+                let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next), option)
                 await handler.execute();
             })
         }
@@ -67,7 +67,7 @@ export class ExpressEngine implements Core.Engine {
             routes.forEach(route => {
                 let container = new Engine.ControllerFactory(option, route)
                 let requestHandler = async (req, resp, next) => {
-                    let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next))
+                    let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next), option)
                     await handler.execute();
                 }
                 let methodRoute = Express.Router()
@@ -88,7 +88,7 @@ export class ExpressEngine implements Core.Engine {
         })
         this.app.use(async (req, resp, next) => {
             let container = new Engine.ControllerFactory(option)
-            let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next))
+            let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next), option)
             await handler.execute();
         })
     }
