@@ -1,6 +1,8 @@
 import { Core } from "kamboja"
 import * as Express from "express"
 import * as Lodash from "lodash"
+import * as Passport from "passport"
+import { LoginUser } from "./login-user"
 
 
 export class RequestAdapter implements Core.HttpRequest {
@@ -12,6 +14,7 @@ export class RequestAdapter implements Core.HttpRequest {
     body: any
     referrer: string
     url: string
+    user: LoginUser
 
     constructor(public request: Express.Request) {
         this.headers = request.headers
@@ -22,7 +25,7 @@ export class RequestAdapter implements Core.HttpRequest {
         this.httpMethod = <Core.HttpMethod>request.method;
         this.url = request.originalUrl;
         this.referrer = request.header("referrer");
-
+        this.user = request.user;
     }
 
     private findCaseInsensitive(obj, key) {
@@ -47,5 +50,16 @@ export class RequestAdapter implements Core.HttpRequest {
 
     isAccept(key: string): boolean {
         return typeof this.request.accepts(key) != "undefined"
+    }
+
+    isAuthenticated(): boolean {
+        return this.request.isAuthenticated()
+    }
+
+    getUserRole(): string {
+        if (this.user)
+            return this.user.role
+        else
+            return
     }
 }
