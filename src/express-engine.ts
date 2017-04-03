@@ -14,7 +14,7 @@ import * as Chalk from "chalk"
 
 export class ExpressEngine implements Core.Engine {
 
-    constructor(private app?: Express.Application) { }
+    constructor(public application?: Express.Application) { }
 
     private initExpress(options: Core.KambojaOption) {
         let pathResolver = options.pathResolver
@@ -26,12 +26,12 @@ export class ExpressEngine implements Core.Engine {
         app.use(BodyParser.urlencoded({ extended: false }));
         app.use(CookieParser());
         app.use(Express.static(pathResolver.resolve(options.staticFilePath)))
-        this.app = app;
+        this.application = app;
     }
 
     private initErrorHandler(options: Core.KambojaOption) {
-        let env = this.app.get('env')
-        this.app.use((err, req, res, next) => {
+        let env = this.application.get('env')
+        this.application.use((err, req, res, next) => {
             let status = err.status;
             if (options.errorHandler) {
                 options.errorHandler(new Core.HttpError(status, err,
@@ -49,13 +49,13 @@ export class ExpressEngine implements Core.Engine {
 
     private initController(routes: Core.RouteInfo[], option: ExpressEngineOption) {
         if (option.middlewares && option.middlewares.length > 0)
-            this.app.use(option.middlewares)
+            this.application.use(option.middlewares)
         let routeByClass = Lodash.groupBy(routes, "classMetaData.name")
 
         let route = routes.filter(x => option.defaultPage &&
             x.route.toLowerCase() == option.defaultPage.toLowerCase())[0]
         if (route) {
-            this.app.get("/", async (req, resp, next) => {
+            this.application.get("/", async (req, resp, next) => {
                 let container = new Engine.ControllerFactory(option, route)
                 let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next), option)
                 await handler.execute();
@@ -84,9 +84,9 @@ export class ExpressEngine implements Core.Engine {
                 else
                     classRoute.use(routes[0].classPath, methodRoute)
             })
-            this.app.use(classRoute)
+            this.application.use(classRoute)
         })
-        this.app.use(async (req, resp, next) => {
+        this.application.use(async (req, resp, next) => {
             let container = new Engine.ControllerFactory(option)
             let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next), option)
             await handler.execute();
@@ -94,10 +94,10 @@ export class ExpressEngine implements Core.Engine {
     }
 
     init(routes: Core.RouteInfo[], options: ExpressEngineOption) {
-        if (!this.app) this.initExpress(options)
+        if (!this.application) this.initExpress(options)
         this.initController(routes, options)
         this.initErrorHandler(options)
-        return this.app;
+        return this.application;
     }
 }
 
