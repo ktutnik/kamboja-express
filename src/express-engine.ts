@@ -52,11 +52,18 @@ export class ExpressEngine implements Core.Engine {
             this.app.use(option.middlewares)
         let routeByClass = Lodash.groupBy(routes, "classMetaData.name")
 
+        let route = routes.filter(x => option.defaultPage &&
+            x.route.toLowerCase() == option.defaultPage.toLowerCase())[0]
+        if (route) {
+            this.app.get("/", async (req, resp, next) => {
+                let container = new Engine.ControllerFactory(option, route)
+                let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next))
+                await handler.execute();
+            })
+        }
+
         Lodash.forOwn(routeByClass, (routes, key) => {
             let classRoute = Express.Router()
-            this.app.get("/", (req, resp, next) => {
-                resp.redirect(option.defaultPage)
-            })
             routes.forEach(route => {
                 let container = new Engine.ControllerFactory(option, route)
                 let requestHandler = async (req, resp, next) => {
@@ -78,6 +85,11 @@ export class ExpressEngine implements Core.Engine {
                     classRoute.use(routes[0].classPath, methodRoute)
             })
             this.app.use(classRoute)
+        })
+        this.app.use(async (req, resp, next) => {
+            let container = new Engine.ControllerFactory(option)
+            let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next))
+            await handler.execute();
         })
     }
 

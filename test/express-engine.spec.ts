@@ -42,7 +42,7 @@ describe("ExpressEngine", () => {
             .expect((result) => {
                 Chai.expect(result.text).contain("user/index")
             })
-            .expect(302)
+            .expect(200)
     })
 
 
@@ -105,6 +105,38 @@ describe("ExpressEngine", () => {
         return Supertest(app)
             .get("/user/haserror")
             .expect(500)
+    })
+
+    it("Should provide 404 if unhandled url requested", () => {
+        let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
+            controllerPaths: ["harness/controller"],
+            viewPath: "harness/view",
+            modelPath: "harness/model",
+            rootPath: __dirname
+        })
+        let app = kamboja.init()
+        return Supertest(app)
+            .get("/unhandled/url")
+            .expect(404)
+    })
+
+    it("Should able to intercept unhandled url from interception", () => {
+        let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
+            controllerPaths: ["harness/controller"],
+            viewPath: "harness/view",
+            modelPath: "harness/model",
+            rootPath: __dirname,
+            interceptors:[
+                "GlobalInterceptor, harness/interceptor/global-interceptor"
+            ]
+        })
+        let app = kamboja.init()
+        return Supertest(app)
+            .get("/unhandled/url")
+            .expect((response) => {
+                Chai.expect(response.body).eq("HELLOW!!")
+            })
+            .expect(200)
     })
 
     it("Should able use existing express app", () => {
