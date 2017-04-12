@@ -61,6 +61,7 @@ export class ExpressEngine implements Core.Engine {
                 await handler.execute();
             })
         }
+        else throw new Error(`Controller to handle ${option.defaultPage} is not found, please specify correct 'defaultPage' in kamboja configuration`)
 
         Lodash.forOwn(routeByClass, (routes, key) => {
             let classRoute = Express.Router()
