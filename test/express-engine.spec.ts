@@ -126,7 +126,7 @@ describe("ExpressEngine", () => {
             viewPath: "harness/view",
             modelPath: "harness/model",
             rootPath: __dirname,
-            interceptors:[
+            interceptors: [
                 "GlobalInterceptor, harness/interceptor/global-interceptor"
             ]
         })
@@ -240,5 +240,18 @@ describe("ExpressEngine", () => {
                 })
                 .expect(200, resolve)
         })
+    })
+
+    it("Should throw if invalid defaultPage provided", () => {
+        let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
+            controllerPaths: ["harness/controller"],
+            viewPath: "harness/view",
+            modelPath: "harness/model",
+            rootPath: __dirname,
+            defaultPage: "/otherpage/index"
+        })
+        Chai.expect(() => {
+            kamboja.init()
+        }).throw("Controller to handle /otherpage/index is not found, please specify correct 'defaultPage' in kamboja configuration")
     })
 })
