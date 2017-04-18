@@ -1,6 +1,5 @@
 export { ExpressEngine } from "./express-engine"
 export { MiddlewareActionResult } from "./middleware-action-result"
-export { ExpressEngineOption } from "./express-engine-options"
-import { ExpressMetaData } from "./express-metadata"
-const express = new ExpressMetaData()
-export { ExpressMetaData, express }
+import { Express, MiddlewareInterceptor } from "./middleware-interception"
+const express = new Express()
+export { express, MiddlewareInterceptor }

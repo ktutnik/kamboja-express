@@ -8,3 +8,4 @@ gulpfile.js
 .gitignore
 .vscode
 .publishrc
+build.sh

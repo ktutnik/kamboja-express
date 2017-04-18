@@ -20,7 +20,7 @@ export class RequestAdapter implements Core.HttpRequest {
     constructor(public request: Express.Request) {
         this.headers = request.headers
         this.cookies = request.cookies
-        this.params = request.params
+        this.params = Lodash.assign(request.params, request.query) 
         this.body = request.body;
         this.httpVersion = request.httpVersion;
         this.httpMethod = <Core.HttpMethod>request.method;
