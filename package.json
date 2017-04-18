@@ -1,6 +1,6 @@
 {
   "name": "kamboja-express",
-  "version": "0.0.1-26",
+  "version": "0.0.1-27",
   "description": "KambojaJS engine implementation using ExpressJs",
   "main": "lib/source/index.js",
   "typings": "lib/dts/index.d.ts",
