@@ -13,14 +13,14 @@ export class CategoriesController extends ApiController {
         return model
     }
 
-    replace( @val.required() id, model) {
+    replace(id, model) {
         return model
     }
 
     modify( @val.required() id, model) {
         return model
     }
-    
+
     delete( @val.required() id) {
         return id
     }
@@ -41,7 +41,7 @@ export class CategoriesItemController extends ApiController {
         return model
     }
 
-    replace( @val.required() id, model, @val.required() categoryId) {
+    replace(id, model, @val.required() categoryId) {
         model.categoryId = categoryId
         return model
     }
