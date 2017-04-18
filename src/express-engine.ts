@@ -58,12 +58,12 @@ export class ExpressEngine implements Core.Engine {
         else throw new Error(`Controller to handle ${option.defaultPage} is not found, please specify correct 'defaultPage' in kamboja configuration`)
 
         routes.forEach(route => {
-            let requestHandler = async (req, resp, next) => {
+            let method = route.httpMethod.toLowerCase()
+            this.application[method](route.route, async (req, resp, next) => {
                 let container = new Engine.ControllerFactory(option, route)
                 let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next), option)
                 await handler.execute();
-            }
-            this.application.use(route.route, requestHandler)
+            })
         })
 
         //rest of the unhandled request and 404 handler
