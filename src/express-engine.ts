@@ -1,7 +1,5 @@
 import { RequestAdapter } from "./request-adapter"
 import { ResponseAdapter } from "./response-adapter"
-import { ExpressEngineOption } from "./express-engine-options"
-import { ExpressMetaData } from "./express-metadata"
 import { Kamboja, Core, Resolver, Engine } from "kamboja"
 import * as Express from "express"
 import * as Logger from "morgan"
@@ -47,11 +45,7 @@ export class ExpressEngine implements Core.Engine {
         })
     }
 
-    private initController(routes: Core.RouteInfo[], option: ExpressEngineOption) {
-        if (option.middlewares && option.middlewares.length > 0)
-            this.application.use(option.middlewares)
-        let routeByClass = Lodash.groupBy(routes, "classMetaData.name")
-
+    private initController(routes: Core.RouteInfo[], option: Core.KambojaOption) {
         let route = routes.filter(x => option.defaultPage &&
             x.route.toLowerCase() == option.defaultPage.toLowerCase())[0]
         if (route) {
@@ -63,30 +57,16 @@ export class ExpressEngine implements Core.Engine {
         }
         else throw new Error(`Controller to handle ${option.defaultPage} is not found, please specify correct 'defaultPage' in kamboja configuration`)
 
-        Lodash.forOwn(routeByClass, (routes, key) => {
-            let classRoute = Express.Router()
-            routes.forEach(route => {
+        routes.forEach(route => {
+            let requestHandler = async (req, resp, next) => {
                 let container = new Engine.ControllerFactory(option, route)
-                let requestHandler = async (req, resp, next) => {
-                    let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next), option)
-                    await handler.execute();
-                }
-                let methodRoute = Express.Router()
-                let method = route.httpMethod.toLowerCase();
-                let controller = container.createController();
-                let methodMiddlewares = ExpressMetaData.getMiddlewares(controller, route.methodMetaData.name)
-                if (methodMiddlewares && methodMiddlewares.length > 0)
-                    methodRoute[method](route.methodPath, methodMiddlewares, requestHandler)
-                else
-                    methodRoute[method](route.methodPath, requestHandler)
-                let classMiddlewares = ExpressMetaData.getMiddlewares(controller)
-                if (classMiddlewares && classMiddlewares.length > 0)
-                    classRoute.use(routes[0].classPath, classMiddlewares, methodRoute)
-                else
-                    classRoute.use(routes[0].classPath, methodRoute)
-            })
-            this.application.use(classRoute)
+                let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next), option)
+                await handler.execute();
+            }
+            this.application.use(route.route, requestHandler)
         })
+
+        //rest of the unhandled request and 404 handler
         this.application.use(async (req, resp, next) => {
             let container = new Engine.ControllerFactory(option)
             let handler = new Engine.RequestHandler(container, new RequestAdapter(req), new ResponseAdapter(resp, next), option)
@@ -94,7 +74,7 @@ export class ExpressEngine implements Core.Engine {
         })
     }
 
-    init(routes: Core.RouteInfo[], options: ExpressEngineOption) {
+    init(routes: Core.RouteInfo[], options: Core.KambojaOption) {
         if (!this.application) this.initExpress(options)
         this.initController(routes, options)
         this.initErrorHandler(options)

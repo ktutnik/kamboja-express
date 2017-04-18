@@ -1,7 +1,6 @@
 import * as Supertest from "supertest"
 import * as Chai from "chai"
-import { ExpressEngine } from "../src"
-import { ExpressEngineOption } from "../src"
+import { ExpressEngine, MiddlewareInterceptor } from "../src"
 import * as Express from "express"
 import * as Kamboja from "kamboja"
 import * as Lodash from "lodash"
@@ -165,19 +164,19 @@ describe("ExpressEngine", () => {
     })
 
     it("Should be able to add middleware in global scope", async () => {
-        let kamboja = new Kamboja.Kamboja(new ExpressEngine(), <ExpressEngineOption>{
+        let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
             controllerPaths: ["harness/controller"],
             viewPath: "harness/view",
             modelPath: "harness/model",
             rootPath: __dirname,
-            middlewares: [
-                (req, res: Express.Response, next) => {
-                    res.status(501)
-                    res.end()
-                }
-            ]
+
         })
-        let app = kamboja.init()
+
+        let app = kamboja.intercept(x => new MiddlewareInterceptor((req, res: Express.Response, next) => {
+            res.status(501)
+            res.end()
+        })).init()
+        
         //class decorated with middleware to force them return 501
         //all actions below the class should return 501
         await new Promise((resolve, reject) => {
