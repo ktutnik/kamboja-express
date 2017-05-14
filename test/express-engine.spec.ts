@@ -1,15 +1,20 @@
 import * as Supertest from "supertest"
 import * as Chai from "chai"
-import { ExpressEngine, MiddlewareInterceptor } from "../src"
+import { ExpressEngine, CoreExpressEngine, ExpressMiddlewareAdapter } from "../src"
 import * as Express from "express"
 import * as Kamboja from "kamboja"
 import * as Lodash from "lodash"
 import * as Fs from "fs"
+import * as Morgan from "morgan"
 import * as CookieParser from "cookie-parser"
 import * as BodyParser from "body-parser"
 import * as Logger from "morgan"
 
 describe("Integration", () => {
+    describe("General", () => {
+        
+    })
+
     describe("Controller", () => {
         it("Should init express properly", () => {
             let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
@@ -86,7 +91,7 @@ describe("Integration", () => {
             return Supertest(app)
                 .get("/user/haserror")
                 .expect((result) => {
-                    Chai.expect(result.text).contain("user error")
+                    Chai.expect(result.text).contain("oops!")
                 })
                 .expect(500)
         })
@@ -141,7 +146,7 @@ describe("Integration", () => {
                 viewPath: "harness/view",
                 modelPath: "harness/model",
                 rootPath: __dirname,
-                interceptors: [
+                middlewares: [
                     "GlobalInterceptor, harness/interceptor/global-interceptor"
                 ]
             })
@@ -154,31 +159,6 @@ describe("Integration", () => {
                 .expect(200)
         })
 
-        it("Should able use existing express app", () => {
-            let express = Express();
-            let pathResolver = new Kamboja.Resolver.DefaultPathResolver(__dirname)
-            express.set("views", pathResolver.resolve("harness/view"))
-            express.set("view engine", "hbs")
-            express.use(Logger("dev"))
-            express.use(BodyParser.json())
-            express.use(BodyParser.urlencoded({ extended: false }));
-            express.use(CookieParser());
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(express), {
-                controllerPaths: ["harness/controller"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname,
-                errorHandler: (error: Kamboja.Core.HttpError) => {
-                    Chai.expect(error.error.message).contain("user error")
-                    error.response.error(error.error)
-                }
-            })
-            let app = kamboja.init()
-            return Supertest(app)
-                .get("/user/index")
-                .expect(200)
-        })
-
         it("Should be able to add middleware in global scope", async () => {
             let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
                 controllerPaths: ["harness/controller"],
@@ -188,7 +168,7 @@ describe("Integration", () => {
 
             })
 
-            let app = kamboja.intercept(x => new MiddlewareInterceptor((req, res: Express.Response, next) => {
+            let app = kamboja.use(new ExpressMiddlewareAdapter((req, res: Express.Response, next) => {
                 res.status(501)
                 res.end()
             })).init()
