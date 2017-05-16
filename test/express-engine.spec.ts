@@ -312,7 +312,7 @@ describe("Integration", () => {
                 .type("application/json")
                 .expect((result) => {
                     //console.log(result)
-                    Chai.expect(result.text).eq("Unexpected end")
+                    Chai.expect(result.text).contain("Unexpected end")
                 })
                 .expect(400)
         })
