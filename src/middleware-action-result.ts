@@ -9,12 +9,15 @@ export class MiddlewareActionResult extends Core.ActionResult {
      * @param middleware Express middleware
      * @param chain Next action result will be executed, important when used inside request interceptor
      */
-    constructor(private middleware: RequestHandler, private chain?:Core.ActionResult) {
+    constructor(private middleware: RequestHandler, private chain?: Core.Invocation) {
         super(null)
     }
 
-    execute(request:RequestAdapter, response: ResponseAdapter, routeInfo: Core.RouteInfo) {
+    async execute(request:RequestAdapter, response: ResponseAdapter, routeInfo: Core.RouteInfo) {
         this.middleware(request.request, response.response, response.next)
-        if(this.chain) this.chain.execute(request, response, routeInfo)
+        if(this.chain) {
+            let result = await this.chain.proceed();
+            await result.execute(request, response, routeInfo)
+        }
     }
 }
