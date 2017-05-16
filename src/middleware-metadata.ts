@@ -1,4 +1,4 @@
-import { Middleware, Core } from "kamboja"
+import { Middleware, Core} from "kamboja"
 import { RequestHandler } from "express"
 import { ExpressMiddlewareAdapter } from "./express-middleware-adapter"
 

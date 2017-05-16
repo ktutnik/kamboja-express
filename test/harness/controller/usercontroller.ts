@@ -1,7 +1,8 @@
 import { internal, http, Controller } from "kamboja"
 import * as Model from "../model/user-model"
 import { Request, Response, NextFunction } from "express"
-import { MiddlewareActionResult } from "../../../src"
+import { MiddlewareActionResult, middleware } from "../../../src"
+import { Return400Middleware } from "../interceptor/400-middleware"
 
 
 let Middleware = (req: Request, res: Response, next: NextFunction) => {
@@ -22,9 +23,14 @@ export class UserController extends Controller {
         return new MiddlewareActionResult(Middleware)
     }
 
-    
+
     @http.get("with/:id")
-    withParam(id:string, iAge: number, bGraduated: boolean) {
-        return this.json({ id:id, age: iAge, graduated: bGraduated })
+    withParam(id: string, iAge: number, bGraduated: boolean) {
+        return this.json({ id: id, age: iAge, graduated: bGraduated })
+    }
+
+    @middleware.use(new Return400Middleware())
+    withMiddleware() {
+        return this.view()
     }
 }

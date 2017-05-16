@@ -1,6 +1,6 @@
 import * as Supertest from "supertest"
 import * as Chai from "chai"
-import { ExpressEngine, CoreExpressEngine, ExpressMiddlewareAdapter } from "../src"
+import { ExpressMiddlewareAdapter } from "../src"
 import * as Express from "express"
 import * as Kamboja from "kamboja"
 import * as Lodash from "lodash"
@@ -9,21 +9,21 @@ import * as Morgan from "morgan"
 import * as CookieParser from "cookie-parser"
 import * as BodyParser from "body-parser"
 import * as Logger from "morgan"
+import { KambojaExpress } from "../src/kamboja-express"
+import * as Path from "path"
 
 describe("Integration", () => {
     describe("General", () => {
-        
+
     })
 
     describe("Controller", () => {
         it("Should init express properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/controller"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress(Path.join(__dirname, "harness"))
+                .set("views", Path.join(__dirname, "harness/view"))
+                .set("view engine", "hbs")
+                .use(Logger("dev"))
+                .init()
             return Supertest(app)
                 .get("/user/index")
                 .expect((result) => {
@@ -33,13 +33,11 @@ describe("Integration", () => {
         })
 
         it("Should able to receive request with query string", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/controller"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress(Path.join(__dirname, "harness"))
+                .set("views", Path.join(__dirname, "harness/view"))
+                .set("view engine", "hbs")
+                .use(Logger("dev"))
+                .init()
             return Supertest(app)
                 .get("/user/with/123?iAge=20&bGraduated=true")
                 .expect((result) => {
@@ -48,109 +46,65 @@ describe("Integration", () => {
                 .expect(200)
         })
 
-        it("Should redirect to default page properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/controller"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname,
-                defaultPage: "/user/index"
-            })
-            let app = kamboja.init()
-            return Supertest(app)
-                .get("/")
-                .expect((result) => {
-                    Chai.expect(result.text).contain("user/index")
-                })
-                .expect(200)
-        })
-
-
-        it("Should able to hide express logger", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/controller"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname,
-                showConsoleLog: false
-            })
-            let app = kamboja.init()
-            return Supertest(app)
-                .get("/user/index")
-                .expect(200)
-        })
 
         it("Should handle error properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/controller"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress(Path.join(__dirname, "harness"))
+                .set("views", Path.join(__dirname, "harness/view"))
+                .set("view engine", "hbs")
+                .use(Logger("dev"))
+                .init()
+            return Supertest(app)
+                .get("/user/haserror")
+                .expect((result) => {
+                    Chai.expect(result.text).contain("This user error")
+                })
+                .expect(500)
+        })
+
+        it("Should able to handle error from middleware", () => {
+            let app = new KambojaExpress(Path.join(__dirname, "harness"))
+                .set("views", Path.join(__dirname, "harness/view"))
+                .set("view engine", "hbs")
+                .use(Logger("dev"))
+                .use("ErrorHandler, interceptor/error-handler")
+                .init()
             return Supertest(app)
                 .get("/user/haserror")
                 .expect((result) => {
                     Chai.expect(result.text).contain("oops!")
                 })
-                .expect(500)
+                .expect(200)
         })
 
-        it("Should able to handle error manually", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/controller"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname,
-                errorHandler: (error: Kamboja.Core.HttpError) => {
-                    Chai.expect(error.error.message).contain("user error")
-                    error.response.error(error.error)
-                }
-            })
-            let app = kamboja.init()
+        it("Should able return Express middleware from controller", () => {
+            let app = new KambojaExpress(Path.join(__dirname, "harness"))
+                .set("views", Path.join(__dirname, "harness/view"))
+                .set("view engine", "hbs")
+                .use(Logger("dev"))
+                .init()
             return Supertest(app)
-                .get("/user/haserror")
-                .expect(500)
-        })
-
-        it("Should hide stack trace on production", () => {
-            process.env.NODE_ENV = "production"
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/controller"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
-            return Supertest(app)
-                .get("/user/haserror")
-                .expect(500)
+                .get("/user/executemiddleware")
+                .expect(401)
         })
 
         it("Should provide 404 if unhandled url requested", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/controller"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress(Path.join(__dirname, "harness"))
+                .set("views", Path.join(__dirname, "harness/view"))
+                .set("view engine", "hbs")
+                .use(Logger("dev"))
+                .use("ErrorHandler, interceptor/error-handler")
+                .init()
             return Supertest(app)
                 .get("/unhandled/url")
                 .expect(404)
         })
 
         it("Should able to intercept unhandled url from interception", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/controller"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname,
-                middlewares: [
-                    "GlobalInterceptor, harness/interceptor/global-interceptor"
-                ]
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress(Path.join(__dirname, "harness"))
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .use("GlobalInterceptor, interceptor/global-interceptor")
+                .init()
             return Supertest(app)
                 .get("/unhandled/url")
                 .expect((response) => {
@@ -160,18 +114,15 @@ describe("Integration", () => {
         })
 
         it("Should be able to add middleware in global scope", async () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/controller"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname,
-
-            })
-
-            let app = kamboja.use(new ExpressMiddlewareAdapter((req, res: Express.Response, next) => {
-                res.status(501)
-                res.end()
-            })).init()
+            let app = new KambojaExpress(Path.join(__dirname, "harness"))
+                .set("views", Path.join(__dirname, "harness/view"))
+                .set("view engine", "hbs")
+                .use(Logger("dev"))
+                .use(new ExpressMiddlewareAdapter((req, res: Express.Response, next) => {
+                    res.status(501)
+                    res.end()
+                }))
+                .init()
 
             //class decorated with middleware to force them return 501
             //all actions below the class should return 501
@@ -189,13 +140,15 @@ describe("Integration", () => {
         })
 
         it("Should be able to add middleware in class scope", async () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/controller"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress(Path.join(__dirname, "harness"))
+                .set("views", Path.join(__dirname, "harness/view"))
+                .set("view engine", "hbs")
+                .use(Logger("dev"))
+                .use(new ExpressMiddlewareAdapter((req, res: Express.Response, next) => {
+                    res.status(501)
+                    res.end()
+                }))
+                .init()
             //class decorated with middleware to force them return 501
             //all actions below the class should return 501
             await new Promise((resolve, reject) => {
@@ -212,13 +165,15 @@ describe("Integration", () => {
         })
 
         it("Should be able to add middleware in method scope", async () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/controller"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress(Path.join(__dirname, "harness"))
+                .set("views", Path.join(__dirname, "harness/view"))
+                .set("view engine", "hbs")
+                .use(Logger("dev"))
+                .use((req, res: Express.Response, next) => {
+                    res.status(501)
+                    res.end()
+                }).init()
+
             await new Promise((resolve, reject) => {
                 //index decorated with middleware to force them return 501
                 Supertest(app)
@@ -237,29 +192,26 @@ describe("Integration", () => {
             })
         })
 
-        it("Should throw if invalid defaultPage provided", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/controller"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname,
-                defaultPage: "/otherpage/index"
-            })
-            Chai.expect(() => {
-                kamboja.init()
-            }).throw("Controller to handle /otherpage/index is not found, please specify correct 'defaultPage' in kamboja configuration")
+        it("Should able to use KambojaJS middleware", () => {
+            let app = new KambojaExpress(Path.join(__dirname, "harness"))
+                .set("views", Path.join(__dirname, "harness/view"))
+                .set("view engine", "hbs")
+                .use(Logger("dev"))
+                .init()
+
+            return Supertest(app)
+                .get("/user/withmiddleware")
+                .expect(400)
         })
+
     })
 
     describe("ApiController", () => {
         it("Should handle `get` properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/api"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
             return Supertest(app)
                 .get("/categories/1")
                 .expect((result) => {
@@ -269,13 +221,10 @@ describe("Integration", () => {
         })
 
         it("Should handle `add` properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/api"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
             return Supertest(app)
                 .post("/categories")
                 .send({ data: "Hello!" })
@@ -286,13 +235,10 @@ describe("Integration", () => {
         })
 
         it("Should handle `list` with default value properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/api"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
             return Supertest(app)
                 .get("/categories")
                 .expect((result) => {
@@ -302,13 +248,10 @@ describe("Integration", () => {
         })
 
         it("Should handle `list` with custom value properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/api"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
             return Supertest(app)
                 .get("/categories?iOffset=30&query=halo")
                 .expect((result) => {
@@ -318,13 +261,10 @@ describe("Integration", () => {
         })
 
         it("Should handle `replace` properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/api"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
             return Supertest(app)
                 .put("/categories/20")
                 .send({ data: "Hello!" })
@@ -335,13 +275,10 @@ describe("Integration", () => {
         })
 
         it("Should handle `modify` properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/api"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
             return Supertest(app)
                 .patch("/categories/20")
                 .send({ data: "Hello!" })
@@ -352,13 +289,10 @@ describe("Integration", () => {
         })
 
         it("Should handle `delete` properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/api"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
             return Supertest(app)
                 .delete("/categories/20")
                 .expect((result) => {
@@ -366,17 +300,30 @@ describe("Integration", () => {
                 })
                 .expect(200)
         })
+
+        it("Should return json error if provided malformed JSON string", () => {
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
+            return Supertest(app)
+                .patch("/categories/20")
+                .send(`{ "data": "Hello!`)
+                .type("application/json")
+                .expect((result) => {
+                    //console.log(result)
+                    Chai.expect(result.text).eq("Unexpected end of JSON input")
+                })
+                .expect(400)
+        })
     })
 
     describe("ApiController With @http.root() logic", () => {
         it("Should handle `get` properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/api"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
             return Supertest(app)
                 .get("/categories/1/items/1")
                 .expect((result) => {
@@ -386,13 +333,10 @@ describe("Integration", () => {
         })
 
         it("Should handle `add` properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/api"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
             return Supertest(app)
                 .post("/categories/1/items")
                 .send({ data: "Hello!" })
@@ -403,13 +347,10 @@ describe("Integration", () => {
         })
 
         it("Should handle `list` with default value properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/api"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
             return Supertest(app)
                 .get("/categories/1/items")
                 .expect((result) => {
@@ -419,13 +360,10 @@ describe("Integration", () => {
         })
 
         it("Should handle `list` with custom value properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/api"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
             return Supertest(app)
                 .get("/categories/1/items?iOffset=30&query=halo")
                 .expect((result) => {
@@ -435,13 +373,10 @@ describe("Integration", () => {
         })
 
         it("Should handle `replace` properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/api"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
             return Supertest(app)
                 .put("/categories/1/items/20")
                 .send({ data: "Hello!" })
@@ -452,13 +387,10 @@ describe("Integration", () => {
         })
 
         it("Should handle `modify` properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/api"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
             return Supertest(app)
                 .patch("/categories/1/items/20")
                 .send({ data: "Hello!" })
@@ -469,13 +401,10 @@ describe("Integration", () => {
         })
 
         it("Should handle `delete` properly", () => {
-            let kamboja = new Kamboja.Kamboja(new ExpressEngine(), {
-                controllerPaths: ["harness/api"],
-                viewPath: "harness/view",
-                modelPath: "harness/model",
-                rootPath: __dirname
-            })
-            let app = kamboja.init()
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .init()
             return Supertest(app)
                 .delete("/categories/1/items/20")
                 .expect((result) => {

@@ -1,14 +1,14 @@
 import { Kamboja, Core } from "kamboja"
-import { CoreExpressEngine } from "./core-express-engine"
+import { ExpressEngine } from "./express-engine"
 import { ExpressMiddlewareAdapter } from "./express-middleware-adapter"
 import { RequestHandler, Application } from "express"
 
 export class KambojaExpress {
-    private expressEngine: CoreExpressEngine;
+    private expressEngine: ExpressEngine;
     private kamboja: Kamboja;
 
-    constructor(opt: string | Core.KambojaOption, engine?: CoreExpressEngine) {
-        this.expressEngine = engine || new CoreExpressEngine();
+    constructor(opt: string | Core.KambojaOption) {
+        this.expressEngine = new ExpressEngine();
         this.kamboja = new Kamboja(this.expressEngine, opt)
     }
 
