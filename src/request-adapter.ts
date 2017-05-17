@@ -16,6 +16,7 @@ export class RequestAdapter implements Core.HttpRequest {
     referrer: string
     url: Url.Url
     user: LoginUser
+    route:string
 
     constructor(public request: Express.Request) {
         this.headers = request.headers
@@ -28,6 +29,7 @@ export class RequestAdapter implements Core.HttpRequest {
             this.url = Url.parse(request.originalUrl);
         this.referrer = request.header("referrer");
         this.user = request.user;
+        this.route = request.route;
     }
 
     private findCaseInsensitive(obj, key) {

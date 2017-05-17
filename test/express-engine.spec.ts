@@ -10,6 +10,7 @@ import * as CookieParser from "cookie-parser"
 import * as BodyParser from "body-parser"
 import * as Logger from "morgan"
 import { KambojaExpress } from "../src/kamboja-express"
+import { ErrorHandler } from "./harness/interceptor/error-handler"
 import * as Path from "path"
 
 describe("Integration", () => {
@@ -47,34 +48,6 @@ describe("Integration", () => {
         })
 
 
-        it("Should handle error properly", () => {
-            let app = new KambojaExpress(Path.join(__dirname, "harness"))
-                .set("views", Path.join(__dirname, "harness/view"))
-                .set("view engine", "hbs")
-                .use(Logger("dev"))
-                .init()
-            return Supertest(app)
-                .get("/user/haserror")
-                .expect((result) => {
-                    Chai.expect(result.text).contain("This user error")
-                })
-                .expect(500)
-        })
-
-        it("Should able to handle error from middleware", () => {
-            let app = new KambojaExpress(Path.join(__dirname, "harness"))
-                .set("views", Path.join(__dirname, "harness/view"))
-                .set("view engine", "hbs")
-                .use(Logger("dev"))
-                .use("ErrorHandler, interceptor/error-handler")
-                .init()
-            return Supertest(app)
-                .get("/user/haserror")
-                .expect((result) => {
-                    Chai.expect(result.text).contain("oops!")
-                })
-                .expect(200)
-        })
 
         it("Should able return Express middleware from controller", () => {
             let app = new KambojaExpress(Path.join(__dirname, "harness"))
@@ -92,7 +65,6 @@ describe("Integration", () => {
                 .set("views", Path.join(__dirname, "harness/view"))
                 .set("view engine", "hbs")
                 .use(Logger("dev"))
-                .use("ErrorHandler, interceptor/error-handler")
                 .init()
             return Supertest(app)
                 .get("/unhandled/url")
@@ -301,21 +273,7 @@ describe("Integration", () => {
                 .expect(200)
         })
 
-        it("Should return json error if provided malformed JSON string", () => {
-            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
-                .use(Logger("dev"))
-                .use(BodyParser.json())
-                .init()
-            return Supertest(app)
-                .patch("/categories/20")
-                .send(`{ "data": "Hello!`)
-                .type("application/json")
-                .expect((result) => {
-                    //console.log(result)
-                    Chai.expect(result.text).contain("Unexpected end")
-                })
-                .expect(400)
-        })
+
     })
 
     describe("ApiController With @http.root() logic", () => {
@@ -412,6 +370,53 @@ describe("Integration", () => {
                 })
                 .expect(200)
         })
+    })
+
+    describe("Error Handler", () => {
+        it("Should handle error properly", () => {
+            let app = new KambojaExpress(Path.join(__dirname, "harness"))
+                .set("views", Path.join(__dirname, "harness/view"))
+                .set("view engine", "hbs")
+                .use(Logger("dev"))
+                .init()
+            return Supertest(app)
+                .get("/user/haserror")
+                .expect((result) => {
+                    Chai.expect(result.text).contain("This user error")
+                })
+                .expect(500)
+        })
+
+        it("Should able to handle error from middleware", () => {
+            let app = new KambojaExpress(Path.join(__dirname, "harness"))
+                .set("views", Path.join(__dirname, "harness/view"))
+                .set("view engine", "hbs")
+                .use(Logger("dev"))
+                .use("ErrorHandler, interceptor/error-handler")
+                .init()
+            return Supertest(app)
+                .get("/user/haserror")
+                .expect((result) => {
+                    Chai.expect(result.text).contain("oops!")
+                })
+                .expect(200)
+        })
+
+        it.only("Should able to get proper controllerInfo if error before touch RequestHandler", () => {
+            let app = new KambojaExpress({ rootPath: Path.join(__dirname, "harness"), controllerPaths: ["api"] })
+                .use(Logger("dev"))
+                .use(BodyParser.json())
+                .use(new ErrorHandler((i) => {
+                    console.log(i.controllerInfo)
+                }))
+                .init()
+            return Supertest(app)
+                .patch("/categories/20")
+                .send(`{ "data": "Hello!`)
+                .type("application/json")
+                .expect(200)
+        })
+
     })
 
 })
