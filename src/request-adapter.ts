@@ -52,8 +52,11 @@ export class RequestAdapter implements Core.HttpRequest {
         return this.findCaseInsensitive(this.params, key)
     }
 
-    isAccept(key: string): boolean {
-        return typeof this.request.accepts(key) != "undefined"
+    getAccepts(key: string|string[]): string | boolean {
+        if(Array.isArray(key))
+            return this.request.accepts(key) 
+        else 
+            return this.request.accepts(key)
     }
 
     isAuthenticated(): boolean {

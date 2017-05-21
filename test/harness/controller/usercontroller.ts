@@ -1,8 +1,9 @@
-import { internal, http, Controller } from "kamboja"
+import { internal, http, Controller, Core } from "kamboja"
 import * as Model from "../model/user-model"
 import { Request, Response, NextFunction } from "express"
 import { MiddlewareActionResult, middleware } from "../../../src"
 import { Return400Middleware } from "../interceptor/400-middleware"
+import { results } from "../../../src"
 
 
 let Middleware = (req: Request, res: Response, next: NextFunction) => {
@@ -12,7 +13,7 @@ let Middleware = (req: Request, res: Response, next: NextFunction) => {
 
 export class UserController extends Controller {
     index() {
-        return this.view()
+        return results.view()
     }
 
     hasError() {
@@ -26,11 +27,17 @@ export class UserController extends Controller {
 
     @http.get("with/:id")
     withParam(id: string, iAge: number, bGraduated: boolean) {
-        return this.json({ id: id, age: iAge, graduated: bGraduated })
+        return { id: id, age: iAge, graduated: bGraduated }
     }
 
     @middleware.use(new Return400Middleware())
     withMiddleware() {
-        return this.view()
+        return results.view()
+    }
+
+    setHeader() {
+        let result = new Core.ActionResult({})
+        result.header = { Accept: "text/xml" }
+        return result;
     }
 }

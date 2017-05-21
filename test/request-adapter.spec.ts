@@ -33,22 +33,14 @@ describe("RequestAdapter", () => {
 
     it("Should check Accept header", async () => {
         let accept = Sinon.stub()
-        accept.withArgs("text/xml").returns("xml")
+        accept.withArgs("xml").returns("xml")
+        accept.withArgs(["xml", "html"]).returns("xml")
         let test = new RequestAdapter(<any>{
             accepts: accept,
             header: () => { }
         })
-        Chai.expect(test.isAccept("text/xml")).true
-    })
-
-    it("Should return false if no Accept header", async () => {
-        let accept = Sinon.stub()
-        accept.withArgs("application/json").returns("json")
-        let test = new RequestAdapter(<any>{
-            accepts: accept,
-            header: () => { }
-        })
-        Chai.expect(test.isAccept("text/xml")).false
+        Chai.expect(test.getAccepts("xml")).eq("xml")
+        Chai.expect(test.getAccepts(["xml", "html"])).eq("xml")
     })
 
     it("Should return isAuthenticated properly", async () => {

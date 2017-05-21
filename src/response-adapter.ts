@@ -1,62 +1,33 @@
-import {Core} from "kamboja"
+import { Core } from "kamboja"
 import * as Express from "express"
 
 export class ResponseAdapter implements Core.HttpResponse {
-    constructor(public response: Express.Response, public next:Express.NextFunction) { }
+    body: any
+    type: string
+    status: number
+    cookies: Core.Cookie[]
+    header: { [key: string]: string | string[] }
+    constructor(public nativeResponse: Express.Response, public nativeNextFunction: Express.NextFunction) { }
 
-    setCookie(key:string, value:string, option?:Core.CookieOptions){
-        this.response.cookie(key, value, option)
+    send() {
+        this.nativeResponse.set(this.header)
+        this.nativeResponse.contentType(this.type || "text/plain")
+        this.nativeResponse.status(this.status || 200)
+        if (this.cookies) {
+            this.cookies.forEach(x => {
+                this.nativeResponse.cookie(x.key, x.value, x.options)
+            })
+        }
+        switch (typeof this.body) {
+            case "number":
+            case "boolean":
+                this.nativeResponse.send(this.body.toString());
+                break
+            case "undefined":
+                this.nativeResponse.end()
+                break
+            default:
+                this.nativeResponse.send(this.body);
+        }
     }
-
-    json(body, status?:number) {
-        if(status)
-            this.response.json(status, body);
-        else
-            this.response.json(body)
-     }
-
-     jsonp(body, status?:number) {
-        if(status)
-            this.response.jsonp(status, body);
-        else
-            this.response.jsonp(body)
-     }
-
-     view(name, model?){
-         this.response.render(name, model)
-     }
-
-     file(path:string){
-         this.response.sendFile(path)
-     }
-
-     redirect(url:string){
-         this.response.redirect(url)
-     }
-
-     status(status:number, message?:string){
-         this.response.status(status)
-         if(message) this.response.send(message)
-     }
-
-     end(){
-         this.response.end()
-     }
-
-     error(error, status?:number) {
-        error.status = status || 500
-        this.next(error)
-     }
-
-     setContentType(type:string){
-         this.response.contentType(type)
-     }
-
-     send(body){
-         this.response.send(body)
-     }
-
-     removeCookie(key:string, options?:Core.CookieOptions){
-         this.response.clearCookie(key, options)
-     }
 }
