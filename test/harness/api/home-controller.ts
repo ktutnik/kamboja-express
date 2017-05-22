@@ -1,8 +1,8 @@
-import { Controller, results } from "../../../src"
+import { Controller, response } from "../../../src"
 
 
 export class HomeController extends Controller {
     index() {
-        return results.view()
+        return response.view()
     }
 }

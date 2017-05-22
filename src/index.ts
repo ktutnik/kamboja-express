@@ -14,4 +14,4 @@ export {
 import {ActionResults} from "./action-results"
 import { MiddlewareMetaData } from "./middleware-metadata"
 export const middleware: MiddlewareMetaData = new MiddlewareMetaData()
-export const results:ActionResults = new ActionResults()
+export const response:ActionResults = new ActionResults()
