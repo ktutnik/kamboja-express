@@ -17,6 +17,23 @@ describe("ResponseAdapter", () => {
             .set("view engine", "hbs")
     })
 
+    it("Should send http preference properly", () => {
+        app.use(async (req, resp, next) => {
+            let result = new ViewActionResult({}, "user/index")
+            result.cookies = [{ key: "User", value: "Nobita" }]
+            result.header = { "Access-Control-Allow-Origin": "*" }
+            await result.execute(new RequestAdapter(req), new ResponseAdapter(resp, next), undefined)
+        });
+        return Supertest(app)
+            .get("/")
+            .expect((response) => {
+                Chai.expect(response.header["access-control-allow-origin"]).eq("*")
+                Chai.expect(response.header["set-cookie"]).deep.eq(['User=Nobita; Path=/'])
+                Chai.expect(response.text).contain("This is user/index")
+            })
+            .expect(200)
+    })
+
     it("Should send body properly", () => {
         app.use(async (req, resp, next) => {
             let result = new ViewActionResult({}, "user/index")

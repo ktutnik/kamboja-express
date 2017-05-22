@@ -9,23 +9,27 @@ export class ViewActionResult extends Core.ActionResult {
     }
 
     async execute(request: Core.HttpRequest, response: ResponseAdapter, routeInfo: Core.RouteInfo): Promise<void> {
+        response.cookies = this.cookies
+        response.header = this.header
+        response.status = this.status
+
         // results.view({})
         if (!this.viewName) {
             if (!routeInfo) throw new Error(ViewOutsideControllerError);
             let className = this.getClassName(routeInfo.qualifiedClassName)
             let viewPath = className + "/" + routeInfo.methodMetaData.name.toLowerCase()
-            response.nativeResponse.render(viewPath, this.model);
+            response.render(viewPath, this.model);
         }
         // results.view({}, "list")
         else if (this.viewName && this.viewName.indexOf("/") == -1) {
             if (!routeInfo) throw new Error(ViewOutsideControllerError);
             let className = this.getClassName(routeInfo.qualifiedClassName)
             let viewPath = className + "/" + this.viewName;
-            response.nativeResponse.render(viewPath, this.model);
+            response.render(viewPath, this.model);
         }
         // results.view({}, "user/list")
         else 
-            response.nativeResponse.render(this.viewName, this.model);
+            response.render(this.viewName, this.model);
     }
 
     private getClassName(fullQualifiedClassName: string) {

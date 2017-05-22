@@ -7,6 +7,8 @@ export class DownloadActionResult extends Core.ActionResult {
     }
 
     async execute(request: Core.HttpRequest, response: ResponseAdapter, routeInfo: Core.RouteInfo): Promise<void> {
-        response.nativeResponse.download(this.path)
+        response.cookies = this.cookies
+        response.header = this.header
+        response.download(this.path)
     }
 }

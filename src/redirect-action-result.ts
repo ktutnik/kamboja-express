@@ -7,6 +7,8 @@ export class RedirectActionResult extends Core.ActionResult {
     }
 
     async execute(request: Core.HttpRequest, response: ResponseAdapter, routeInfo: Core.RouteInfo): Promise<void> {
-        response.nativeResponse.redirect(this.path)
+        response.cookies = this.cookies
+        response.header = this.header
+        response.redirect(this.path)
     }
 }
