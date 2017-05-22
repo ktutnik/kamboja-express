@@ -1,8 +1,8 @@
 import { internal, Controller } from "kamboja"
-import {results} from "../../../src"
+import {response} from "../../../src"
 
 export class HomeController extends Controller {
     index() {
-        return results.view()
+        return response.view()
     }
 }

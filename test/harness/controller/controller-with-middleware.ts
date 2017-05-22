@@ -1,5 +1,5 @@
 import { internal, Controller } from "kamboja"
-import { middleware, results } from "../../../src"
+import { middleware, response } from "../../../src"
 import * as Model from "../model/user-model"
 import * as Express from "express"
 
