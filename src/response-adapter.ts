@@ -1,62 +1,62 @@
-import {Core} from "kamboja"
+import { Core } from "kamboja"
 import * as Express from "express"
 
 export class ResponseAdapter implements Core.HttpResponse {
-    constructor(public response: Express.Response, public next:Express.NextFunction) { }
+    body: any
+    type: string
+    status: number
+    cookies: Core.Cookie[]
+    header: { [key: string]: string | string[] }
+    constructor(public nativeResponse: Express.Response, public nativeNextFunction: Express.NextFunction) { }
 
-    setCookie(key:string, value:string, option?:Core.CookieOptions){
-        this.response.cookie(key, value, option)
+    private setup() {
+        this.nativeResponse.set(this.header)
+        this.nativeResponse.status(this.status || 200)
+        if (this.cookies) {
+            this.cookies.forEach(x => {
+                this.nativeResponse.cookie(x.key, x.value, x.options)
+            })
+        }
     }
 
-    json(body, status?:number) {
-        if(status)
-            this.response.json(status, body);
-        else
-            this.response.json(body)
-     }
+    json(){
+        this.setup()
+        this.nativeResponse.status(this.status).json(this.body)
+    }
 
-     jsonp(body, status?:number) {
-        if(status)
-            this.response.jsonp(status, body);
-        else
-            this.response.jsonp(body)
-     }
+    redirect(path:string){
+        this.setup()
+        this.nativeResponse.redirect(path)
+    }
 
-     view(name, model?){
-         this.response.render(name, model)
-     }
+    download(path:string){
+        this.setup()
+        this.nativeResponse.download(path)
+    }
 
-     file(path:string){
-         this.response.sendFile(path)
-     }
+    file(path:string){
+        this.setup()
+        this.nativeResponse.sendFile(path)
+    }
 
-     redirect(url:string){
-         this.response.redirect(url)
-     }
+    render(viewName:string, model){
+        this.setup()
+        this.nativeResponse.render(viewName, model)
+    }
 
-     status(status:number, message?:string){
-         this.response.status(status)
-         if(message) this.response.send(message)
-     }
-
-     end(){
-         this.response.end()
-     }
-
-     error(error, status?:number) {
-        error.status = status || 500
-        this.next(error)
-     }
-
-     setContentType(type:string){
-         this.response.contentType(type)
-     }
-
-     send(body){
-         this.response.send(body)
-     }
-
-     removeCookie(key:string, options?:Core.CookieOptions){
-         this.response.clearCookie(key, options)
-     }
+    send() {
+        this.setup()
+        this.nativeResponse.contentType(this.type || "text/plain")
+        switch (typeof this.body) {
+            case "number":
+            case "boolean":
+                this.nativeResponse.send(this.body.toString());
+                break
+            case "undefined":
+                this.nativeResponse.end()
+                break
+            default:
+                this.nativeResponse.send(this.body);
+        }
+    }
 }

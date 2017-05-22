@@ -1,5 +1,5 @@
 import { internal, Controller } from "kamboja"
-import { middleware } from "../../../src"
+import { middleware, results } from "../../../src"
 import * as Model from "../model/user-model"
 import * as Express from "express"
 
@@ -9,11 +9,11 @@ import * as Express from "express"
 })
 export class ClassScopedMiddlewareController extends Controller {
     index() {
-        return this.json("Hello!")
+        return "Hello!"
     }
 
     otherIndex() {
-        return this.json("Hello!")
+        return "Hello!"
     }
 }
 
@@ -23,10 +23,10 @@ export class MethodScopedMiddlewareController extends Controller {
         res.end()
     })
     index() {
-        return this.json("Hello!")
+        return "Hello!"
     }
 
     otherIndex() {
-        return this.json("Hello!")
+        return "Hello!"
     }
 }

@@ -3,7 +3,7 @@ import { ExpressEngine } from "./express-engine"
 import { ExpressMiddlewareAdapter } from "./express-middleware-adapter"
 import { RequestHandler, Application } from "express"
 
-export class KambojaExpress {
+export class KambojaApplication {
     private expressEngine: ExpressEngine;
     private kamboja: Kamboja;
 

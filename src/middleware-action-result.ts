@@ -14,7 +14,7 @@ export class MiddlewareActionResult extends Core.ActionResult {
     }
 
     async execute(request:RequestAdapter, response: ResponseAdapter, routeInfo: Core.RouteInfo) {
-        this.middleware(request.request, response.response, response.next)
+        this.middleware(request.request, response.nativeResponse, response.nativeNextFunction)
         if(this.chain) {
             let result = await this.chain.proceed();
             await result.execute(request, response, routeInfo)
