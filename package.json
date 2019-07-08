@@ -10,7 +10,9 @@
   "scripts": {
     "test": "gulp",
     "preversion": "gulp",
-    "postversion": "git push origin master && git push origin master --tags"
+    "postversion": "git push origin master && git push origin master --tags",
+    "snyk-protect": "snyk protect",
+    "prepublish": "npm run snyk-protect"
   },
   "repository": {
     "type": "git",
@@ -39,7 +41,8 @@
     "lodash": "^4.17.4",
     "reflect-metadata": "^0.1.10",
     "tslib": "^1.7.1",
-    "validator": "^7.0.0"
+    "validator": "^7.0.0",
+    "snyk": "^1.192.3"
   },
   "devDependencies": {
     "@types/body-parser": "1.16.3",
@@ -66,5 +69,6 @@
     "sinon": "^2.3.2",
     "supertest": "^3.0.0",
     "typescript": "^2.3.3"
-  }
+  },
+  "snyk": true
 }
