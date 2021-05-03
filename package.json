@@ -39,7 +39,7 @@
     "lodash": "^4.17.4",
     "reflect-metadata": "^0.1.10",
     "tslib": "^1.7.1",
-    "validator": "^7.0.0"
+    "validator": "^13.6.0"
   },
   "devDependencies": {
     "@types/body-parser": "1.16.3",
